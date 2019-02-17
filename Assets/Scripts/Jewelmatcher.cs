@@ -60,10 +60,10 @@ public class Jewelmatcher : MonoBehaviour
             switch (startingPoint)
             {
                 case Direction.NONE: j.transform.position = j.IdealPosition(); break;
-                case Direction.TOP_: j.transform.position = GetPosition(new Vector2Int(j.rowcol.x, size.y)); break;
-                case Direction.BOTT: j.transform.position = GetPosition(new Vector2Int(j.rowcol.x, -1)); break;
-                case Direction.LEFT: j.transform.position = GetPosition(new Vector2Int(-1, j.rowcol.y)); break;
-                case Direction.RIGH: j.transform.position = GetPosition(new Vector2Int(size.x, j.rowcol.y)); break;
+                case Direction.TOP_: j.transform.position = GetPosition(new Vector2Int(j.rowcol.x, size.y + j.rowcol.y)); break;
+                case Direction.BOTT: j.transform.position = GetPosition(new Vector2Int(j.rowcol.x, -1 - j.rowcol.y)); break;
+                case Direction.LEFT: j.transform.position = GetPosition(new Vector2Int(-1 - j.rowcol.x, j.rowcol.y)); break;
+                case Direction.RIGH: j.transform.position = GetPosition(new Vector2Int(size.x + j.rowcol.x, j.rowcol.y)); break;
             }
             freeSpaces.RemoveAt(loc);
             board[j.rowcol.y, j.rowcol.x] = j;
@@ -149,17 +149,18 @@ public class Jewelmatcher : MonoBehaviour
             case Direction.TOP_: locs.Sort((a, b) => { return a.y > b.y ? 1 : a.y < b.y ? -1 : 0; }); break;
             case Direction.BOTT: locs.Sort((a, b) => { return a.y < b.y ? 1 : a.y > b.y ? -1 : 0; }); break;
             case Direction.LEFT: locs.Sort((a, b) => { return a.x < b.x ? 1 : a.x > b.x ? -1 : 0; }); break;
-            case Direction.RIGH: locs.Sort((a, b) => { return a.x > b.x ? 1 : a.x > b.x ? -1 : 0; }); break;
+            case Direction.RIGH: locs.Sort((a, b) => { return a.x > b.x ? 1 : a.x < b.x ? -1 : 0; }); break;
         }
     }
 
-    public void FillInGaps(Direction dir, List<Vector2Int> locs = null)
+    public void FillInGaps(Direction dir, List<Vector2Int> locs)
     {
         if (locs == null) locs = GetFreeSpaces();
         SortByDirection(dir, locs);
         for(int i = 0; i < locs.Count; ++i)
         {
             // TODO if top, find the next above, swap it's position here
+            // TODO put the new empty space back into the locs list...
         }
     }
 
@@ -176,7 +177,7 @@ public class Jewelmatcher : MonoBehaviour
         return locs;
     }
 
-    public List<Jewel> ResolveCollision()
+    public List<Jewel> ResolveCollision(Direction dir)
     {
         List<List<Jewel>> list = CalculateReadyToActivate();
         List<Jewel> resolved = null;
@@ -194,7 +195,11 @@ public class Jewelmatcher : MonoBehaviour
                     resolved.Add(list[i][j]);
                 }
             }
-
+            List<Vector2Int> locs = LocationsOfJewels(list);
+            // TODO RemoveJewelAt(resolved[i]), FillInGaps(dir, locs)
+            // TODO for locs
+                // TODO NewJewel(locs, dir)
+                // TODO remove locs[i]
         }
         return resolved;
     }
@@ -222,6 +227,13 @@ public class Jewelmatcher : MonoBehaviour
         board[a.y, a.x] = jb;
         board[b.y, b.x] = ja;
         changed = true;
+    }
+
+    public void RemoveJewelAt(Vector2Int p)
+    {
+        Jewel j = board[p.y, p.x];
+        board[p.y, p.x] = null;
+        Destroy(j);
     }
 
     public void SetSelected(Jewel j)
