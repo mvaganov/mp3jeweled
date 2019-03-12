@@ -223,6 +223,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   size: {x: 10, y: 10}
   gravDir: {x: 0, y: -1}
+  swapDistance: 1
+  swapSpeed: 10
+  selectedScale: 1.25
+  thisManyInARowToActivate: 3
   ps: {fileID: 2026066276}
   possibleJewels:
   - {fileID: 114531562738827078, guid: f77de98b391a0c24ca31ef5f3ad49745, type: 2}
