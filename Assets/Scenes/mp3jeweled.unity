@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c84cadbb28c7c9e4ab59bdae9cc12016, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: {x: 10, y: 10}
+  size: {x: 16, y: 10}
   gravDir: {x: 0, y: -1}
   swapDistance: 1
   swapSpeed: 10
@@ -238,7 +238,7 @@ MonoBehaviour:
   - {fileID: 114673638313917628, guid: 525be5003e5d2094e80e93ef4ae8f794, type: 2}
   - {fileID: 114025086625463100, guid: e17c2d66be04b2342849a6329680ec50, type: 2}
   - {fileID: 114857153364352244, guid: 40c1d895a901c2e44ba19c883518f776, type: 2}
-  jewelsToUse: 7
+  jewelsToUse: 8
   gemsNeedToFinishMoving: 0
 --- !u!4 &1724299428
 Transform:
@@ -384,7 +384,7 @@ ParticleSystem:
   moveWithTransform: 1
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 1
-  randomSeed: -742357776
+  randomSeed: 2078719042
   InitialModule:
     serializedVersion: 3
     enabled: 1
