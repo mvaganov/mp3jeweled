@@ -18,6 +18,7 @@ public class Jewelmatcher : MonoBehaviour
 
     public ParticleSystem ps;
     public Jewel[] possibleJewels;
+    public int jewelsToUse = -1;
     List<Vector2Int> freeSpaces;
 
     public List<Vector2Int> GetFreeSpaces()
@@ -49,11 +50,12 @@ public class Jewelmatcher : MonoBehaviour
 
     public enum Direction { NONE, TOP_, BOTT, LEFT, RIGH };
     public Jewel NewJewel(List<Vector2Int> freeSpaces = null, Direction startingPoint = Direction.NONE) {
-        if(freeSpaces == null) freeSpaces = GetFreeSpaces();
+        Vector2Int startOffset = Vector2Int.zero;
+        if (freeSpaces == null) freeSpaces = GetFreeSpaces();
         if (freeSpaces.Count > 0)
         {
             int loc = Random.Range(0, freeSpaces.Count);
-            int i = Random.Range(0, possibleJewels.Length);
+            int i = Random.Range(0, jewelsToUse);
             Jewel j = (Instantiate(possibleJewels[i].gameObject) as GameObject).GetComponent<Jewel>();
             j.transform.SetParent(transform);
             j.g = this;
@@ -73,10 +75,17 @@ public class Jewelmatcher : MonoBehaviour
         }
         return null;
     }
+    void Awake()
+    {
+        if(jewelsToUse < 0)
+        {
+            jewelsToUse = possibleJewels.Length;
+        }
+    }
     void Start()
     {
         board = new Jewel[size.y, size.x];
-        int count = size.x * size.y;
+
         freeSpaces = GetFreeSpaces();
         ParticleState(false);
     }
@@ -89,45 +98,41 @@ public class Jewelmatcher : MonoBehaviour
 
     public List<List<Jewel>> CalculateReadyToActivate()
     {
-    // TODO validate that every jewel is in the correct board slot (row/col matches!)
-        List<List<Jewel>> vlist = new List<List<Jewel>>();
-        List<List<Jewel>> hlist = new List<List<Jewel>>();
-        for (int r = 0; r < size.y-2; ++r)
+        // TODO validate that every jewel is in the correct board slot (row/col matches!)
+        List<List<Jewel>> colList = new List<List<Jewel>>();
+        List<List<Jewel>> rowList = new List<List<Jewel>>();
+
+        for (int r = 0; r < size.y; ++r)
         {
-            for (int c = 0; c < size.x-2; ++c)
+            for (int c = 0; c < size.x; ++c)
             {
-                //Debug.Log((size.y-2)+" "+(size.x-2));
                 Jewel j = board[r, c];
                 if(j != null)
                 {
-                    int inCol = 0, inRow = 0, idx;
-                    // check in a line down
-                    while ((idx=r+inCol+1) < board.GetLength(0) && board[idx, c] != null 
-                        && IsInList(board[idx, c], vlist) < 0 && board[idx, c].name == j.name) { inCol++; }
-                    while ((idx=c+inRow+1) < board.GetLength(1) && board[r, idx] != null
-                        && IsInList(board[r, idx], hlist) < 0 && board[r, idx].name == j.name) { inRow++; }
+                    string jname = j.name;
+                    int inCol = 1, inRow = 1;
+                    while (inCol + c < size.x && board[r, c + inCol] != null && board[r, c + inCol].name == j.name
+                        && IsInList(board[r,c+inCol],colList) < 0) { inCol++; }
+                    while (inRow + r < size.y && board[r + inRow, c] != null && board[r + inRow, c].name == j.name
+                        && IsInList(board[r+inRow,c],rowList) < 0) { inRow++; }
+
                     if (inCol >= thisManyInARowToActivate)
                     {
                         List<Jewel> line = new List<Jewel>();
-                        for(int i = 0; i < inCol; ++i) { line.Add(board[r + inCol, c]); }
-                        vlist.Add(line);
-                        Debug.Log("h");
-                        freeSpaces = null; // DEBUG
+                        for(int i = 0; i < inCol; ++i) { line.Add(board[r, c + i]); }
+                        colList.Add(line);
                     }
                     if (inRow >= thisManyInARowToActivate)
                     {
                         List<Jewel> line = new List<Jewel>();
-                        for (int i = 0; i < inRow; ++i) { line.Add(board[r, c + inRow]); }
-                        hlist.Add(line);
-                        Debug.Log("v");
-                        freeSpaces = null; // DEBUG
+                        for (int i = 0; i < inRow; ++i) { line.Add(board[r + i, c]); }
+                        rowList.Add(line);
                     }
-
                 }
             }
         }
-        vlist.AddRange(hlist);
-        return vlist;
+        colList.AddRange(rowList);
+        return colList;
     }
 
     public void RemoveCollidingActivationsWithPreferenceToSize(List<List<Jewel>> list)
@@ -135,9 +140,9 @@ public class Jewelmatcher : MonoBehaviour
         list.Sort((a, b) => { return a.Count > b.Count ? -1 : a.Count < b.Count ? 1 : 0; });
         for(int i = 1; i < list.Count; ++i)
         {
-            for(int j = list.Count-1; j > i; --j)
+            for(int j = list.Count-1; i < list.Count && j > i; --j)
             {
-                for (int k = 0; k < list[i].Count; ++k) {
+                for (int k = 0; i < list.Count && j > i && k < list[i].Count; ++k) {
                     bool collides = list[j].Contains(list[i][k]);
                     if (collides)
                     {
@@ -158,25 +163,15 @@ public class Jewelmatcher : MonoBehaviour
 
     public void SortByDirection(Direction dir, List<Vector2Int> locs = null)
     {
-        //switch (dir)
-        //{
-        //    case Direction.TOP_: locs.Sort((a, b) => { return a.y > b.y ? 1 : a.y < b.y ? -1 : 0; }); break;
-        //    case Direction.BOTT: locs.Sort((a, b) => { return a.y < b.y ? 1 : a.y > b.y ? -1 : 0; }); break;
-        //    case Direction.LEFT: locs.Sort((a, b) => { return a.x < b.x ? 1 : a.x > b.x ? -1 : 0; }); break;
-        //    case Direction.RIGH: locs.Sort((a, b) => { return a.x > b.x ? 1 : a.x < b.x ? -1 : 0; }); break;
-        //}
         locs.Sort(sorts[dir]);
     }
 
     public void Pull(Direction dir, List<Vector2Int> locs)
     {
-        //if (locs == null) locs = GetFreeSpaces();
-        //SortByDirection(dir, locs);
-        //for(int i = 0; i < locs.Count; ++i)
         switch(dir) {
         case Direction.TOP_:
             for(int x=0; x < size.x; ++x) {
-                for(int y=0; y <size.y; ++y) {
+                for(int y=0; y < size.y; ++y) {
                     // if we found an empty spot
                     if(board[y,x] == null) {
                         // find the next jewel that should be in that spot
@@ -184,7 +179,7 @@ public class Jewelmatcher : MonoBehaviour
                         for(int i=y+1; i<size.y; ++i) {
                             if(board[i,x] != null) { j = board[i,x]; break; }
                         }
-                        if(j != null) { Swap(new Vector2Int(y,x), j.rowcol); } else { break; }
+                        if(j != null) { Swap(new Vector2Int(x,y), j.rowcol); } else { break; }
                     }
                 }
             }
@@ -223,7 +218,7 @@ public class Jewelmatcher : MonoBehaviour
         List<Jewel> resolved = null;
         if (list.Count > 0)
         {
-            Debug.Log(list.Count);
+            //Debug.Log(list.Count);
             ForEach(list, (i,j)=> { if(list[i][j] == null) { throw new System.Exception("NULL IS BAD "+i+" "+j); } });
             resolved = new List<Jewel>();
             RemoveCollidingActivationsWithPreferenceToSize(list);
@@ -239,25 +234,46 @@ public class Jewelmatcher : MonoBehaviour
                     resolved.Add(list[i][j]);
                 }
             }
-            //List<Vector2Int> locs = LocationsOfJewels(list);
-            //for(int i = 0; i < locs.Count; ++i){
-            //    RemoveJewelAt(locs[i]);
-            //}
-            //Pull(dir, locs);
-            ////freeSpaces = GetFreeSpaces();
-            //Debug.Log("???");
+            List<Vector2Int> locs = LocationsOfJewels(list);
+            for (int i = 0; i < locs.Count; ++i)
+            {
+                RemoveJewelAt(locs[i]);
+            }
+            Pull(dir, locs);
+            gemsNeedToFinishMoving = true;
+            freeSpaces = GetFreeSpaces();
         }
         return resolved;
     }
 
+    public bool gemsNeedToFinishMoving = false;
     // Update is called once per frame
     void FixedUpdate()
     {
-        if(freeSpaces != null && freeSpaces.Count > 0)
+        if (gemsNeedToFinishMoving)
         {
-            NewJewel(freeSpaces);
+            gemsNeedToFinishMoving = false;
+            for (int r = 0; r < size.y; ++r)
+            {
+                for (int c = 0; c < size.x; ++c)
+                {
+                    if (board[r, c] != null && board[r, c].moving)
+                    {
+                        gemsNeedToFinishMoving = true;
+                    }
+                }
+            }
         }
-        if(dirty){
+        if (!gemsNeedToFinishMoving)
+        {
+            if (freeSpaces != null && freeSpaces.Count > 0)
+            {
+                NewJewel(freeSpaces, Direction.TOP_);
+                freeSpaces = GetFreeSpaces();
+            }
+        }
+        if (dirty && !gemsNeedToFinishMoving && (freeSpaces == null || freeSpaces.Count == 0))
+        {
             ResolveCollision(Direction.TOP_);
             dirty = false;
         }
@@ -277,13 +293,22 @@ public class Jewelmatcher : MonoBehaviour
         board[a.y, a.x] = jb;
         board[b.y, b.x] = ja;
         dirty = true;
+        gemsNeedToFinishMoving = true;
     }
 
     public void RemoveJewelAt(Vector2Int p)
     {
         Jewel j = board[p.y, p.x];
-        board[p.y, p.x] = null;
-        Destroy(j);
+        if (j != null)
+        {
+            board[p.y, p.x] = null;
+            if(ps.transform.parent == j.transform)
+            {
+                Debug.Log("close one");
+                ps.transform.SetParent(null);
+            }
+            Destroy(j.gameObject);
+        }
     }
 
     public void SetSelected(Jewel j)
@@ -301,6 +326,8 @@ public class Jewelmatcher : MonoBehaviour
         } else {
             ParticleState(true);
             ps.transform.position = selected.transform.position + Vector3.back;
+            ps.transform.SetParent(null);
+            ps.transform.localScale = Vector3.one;
             ps.transform.SetParent(selected.transform);
         }
     }

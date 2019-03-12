@@ -6,6 +6,8 @@ public class Jewel : MonoBehaviour
 {
     public Jewelmatcher g;
     public Vector2Int rowcol;
+    [HideInInspector]
+    public bool moving = false;
 
     void OnMouseDown()
     {
@@ -25,7 +27,8 @@ public class Jewel : MonoBehaviour
     public void Update()
     {
         Vector3 p = IdealPosition();
-        if (!IsAt(p))
+        moving = !IsAt(p);
+        if (moving)
         {
             Vector3 delta = p - transform.position;
             float dist = delta.magnitude;
