@@ -4,4 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/mp3jeweled.unity
+    guid: b7bd204e23a496147bb8b75845607e2f
+  m_configObjects: {}
